@@ -46,27 +46,34 @@ st.caption("Multi-Agent Research Pipeline — LangChain + Mistral AI + Tavily")
 with st.sidebar:
     st.header("⚙️ Configuration")
 
-    env_mistral = os.getenv("MISTRAL_API_KEY", "")
-    env_tavily = os.getenv("TAVILY_API_KEY", "")
+    # IMPORTANT: never pre-fill a text_input's value with a real secret.
+    # This app is public — anyone can click the password-field's reveal
+    # icon and read whatever value is sitting in the box. If keys are
+    # already loaded (from Streamlit Cloud secrets or a local .env), we
+    # just show a status message and use them silently. The input boxes
+    # only appear — empty — when a key is genuinely missing, so a visitor
+    # can never see keys they didn't type in themselves.
+    mistral_preloaded = bool(os.getenv("MISTRAL_API_KEY"))
+    tavily_preloaded = bool(os.getenv("TAVILY_API_KEY"))
 
-    mistral_key = st.text_input(
-        "Mistral API Key", value=env_mistral, type="password"
-    )
-    tavily_key = st.text_input(
-        "Tavily API Key", value=env_tavily, type="password"
-    )
+    if not mistral_preloaded:
+        entered = st.text_input("Mistral API Key", value="", type="password")
+        if entered:
+            os.environ["MISTRAL_API_KEY"] = entered
+            mistral_preloaded = True
 
-    if mistral_key:
-        os.environ["MISTRAL_API_KEY"] = mistral_key
-    if tavily_key:
-        os.environ["TAVILY_API_KEY"] = tavily_key
+    if not tavily_preloaded:
+        entered = st.text_input("Tavily API Key", value="", type="password")
+        if entered:
+            os.environ["TAVILY_API_KEY"] = entered
+            tavily_preloaded = True
 
-    keys_ready = bool(mistral_key) and bool(tavily_key)
+    keys_ready = mistral_preloaded and tavily_preloaded
 
     if keys_ready:
         st.success("API keys loaded ✅")
     else:
-        st.warning("Enter both API keys (or set them in your .env file) to run the pipeline.")
+        st.warning("Enter both API keys (or set them in Streamlit secrets / your .env file) to run the pipeline.")
 
     st.caption(
         "Note: if you change a key here after the app has already run once, "
